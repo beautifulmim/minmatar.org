@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 
 import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
 
 from app.settings_celery import *  # noqa # pylint: disable=wildcard-import
 from app.settings_common import *  # noqa # pylint: disable=wildcard-import
@@ -113,6 +114,7 @@ if DEBUG:
 
 sentry_sdk.init(
     dsn=os.environ.get("SENTRY_BACKEND_DSN", ""),
+    integrations=[DjangoIntegration()],
     # Set traces_sample_rate to 1.0 to capture 100%
     # of transactions for performance monitoring.
     traces_sample_rate=1.0,

@@ -3,6 +3,7 @@
 import os
 
 import sentry_sdk
+from sentry_sdk.integrations.celery import CeleryIntegration
 from celery import Celery, signals
 from celery.app import trace
 from django.conf import settings  # noqa
@@ -58,6 +59,7 @@ SENTRY_CELERY_DSN = os.environ.get("SENTRY_CELERY_DSN", None)
 def init_sentry(**_kwargs):
     sentry_sdk.init(
         dsn=SENTRY_CELERY_DSN,
+        integrations=[CeleryIntegration()],
         enable_tracing=True,
         traces_sample_rate=1.0,
         environment=settings.ENV,
