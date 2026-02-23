@@ -50,6 +50,26 @@ import IndustryIcon from '@components/icons/IndustryIcon.astro';
         </PilotBadge>
     </div>
     <FlexInline>
+        <Flexblock class="[ basis-[350px] pr-10 ]" gap='var(--space-3xs)'>
+            <FlexInline justification='space-between'>
+                <small>{format_date(lang, order.created_at)}</small>
+                <small>{format_date(lang, order.needed_by)}</small>
+            </FlexInline>
+            <div class="[ timeline ]">
+                <Progress
+                    class:list={[
+                        'w-full',
+                        { success: order.fulfilled_at },
+                        { danger: !order.fulfilled_at && time_to_deadline > 90 }
+                    ]}
+                    max="100"
+                    value={time_to_deadline}
+                    data-tippy-content={completion_tooltip}
+                >
+                    {completion_tooltip}
+                </Progress>
+            </div>
+        </Flexblock>
         <div class="[ basis-[250px] ]">
             <FixedFluid width='32px' gap='var(--space-2xs)' breakpoint='30%' class="[  items-center! ]">
                 <div class="[ text-highlight ]">
@@ -79,26 +99,6 @@ import IndustryIcon from '@components/icons/IndustryIcon.astro';
                 init_tooltips={init_tooltips}
             />
         </div>
-        <Flexblock class="[ basis-[350px] ]" gap='var(--space-3xs)'>
-            <FlexInline justification='space-between'>
-                <small>{format_date(lang, order.created_at)}</small>
-                <small>{format_date(lang, order.needed_by)}</small>
-            </FlexInline>
-            <div class="[ timeline ]">
-                <Progress
-                    class:list={[
-                        'w-full',
-                        { success: order.fulfilled_at },
-                        { danger: !order.fulfilled_at && time_to_deadline > 90 }
-                    ]}
-                    max="100"
-                    value={time_to_deadline}
-                    data-tippy-content={completion_tooltip}
-                >
-                    {completion_tooltip}
-                </Progress>
-            </div>
-        </Flexblock>
     </FlexInline>
 </FixedFluid>
 
