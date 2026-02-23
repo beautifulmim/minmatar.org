@@ -111,11 +111,28 @@ def create_or_update_contract_from_db_contract(
     matches, and title matches a known fitting. Returns True if stored.
     """
     if db_contract.type != EveMarketContract.esi_contract_type:
+        logger.info(
+            "Skipping contract %s: type %s is not %s",
+            db_contract.contract_id,
+            db_contract.type,
+            EveMarketContract.esi_contract_type,
+        )
         return False
     if db_contract.start_location_id != location.location_id:
+        logger.info(
+            "Skipping contract %s: start_location_id %s does not match location %s",
+            db_contract.contract_id,
+            db_contract.start_location_id,
+            location.location_id,
+        )
         return False
     fitting = get_fitting_for_contract(db_contract.title or "")
     if not fitting:
+        logger.info(
+            "Skipping contract %s: no fitting found for title %r",
+            db_contract.contract_id,
+            db_contract.title or "",
+        )
         return False
     status = _map_contract_status(db_contract.status or "")
     contract, _ = EveMarketContract.objects.get_or_create(
