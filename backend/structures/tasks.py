@@ -19,7 +19,6 @@ from structures.helpers import (
     is_new_event,
     discord_message_for_ping,
     parse_esi_time,
-    ensure_timer_from_reinforcement_notification,
     get_characters_with_notification_scope_for_structure_corps,
 )
 
@@ -244,23 +243,6 @@ def fetch_structure_notifications(character):
 
     total_found = 0
     total_new = 0
-    esi = EsiClient(character)
-    corp = EveCorporation.objects.filter(
-        corporation_id=character.corporation_id
-    ).first()
-    corporation_name = corp.name if corp else "Unknown"
-    alliance_name = (
-        corp.alliance.name
-        if corp and corp.alliance_id and corp.alliance
-        else None
-    )
-
-    def resolve_system_name(system_id: int) -> str:
-        try:
-            solar_system = esi.get_solar_system(system_id)
-            return solar_system.name
-        except Exception:
-            return f"System {system_id}"
 
     for notification in response.results():
         if notification["type"] in combat_types:
@@ -289,15 +271,6 @@ def fetch_structure_notifications(character):
                         event, settings.DISCORD_STRUCTURE_PINGS_CHANNEL_ID
                     )
                     total_new += 1
-
-            # When we have a reinforcement with a timer, add/update EveStructureTimer
-            ensure_timer_from_reinforcement_notification(
-                notification["type"],
-                data,
-                corporation_name=corporation_name,
-                alliance_name=alliance_name,
-                system_name_resolver=resolve_system_name,
-            )
 
             total_found += 1
 

@@ -1,7 +1,7 @@
 import re
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Callable, List, Tuple
+from typing import List, Tuple
 
 from pydantic import BaseModel
 from django.db.models import Count, Q
@@ -10,25 +10,9 @@ from eveonline.scopes import DIRECTOR_SCOPES
 from eveonline.client import EsiClient
 from eveonline.models import EveCharacter
 
-from structures.models import EveStructure, EveStructurePing, EveStructureTimer
+from structures.models import EveStructure, EveStructurePing
 
 logger = logging.getLogger(__name__)
-
-# Map EVE structure type_id to EveStructureTimer.type slug (type_choices)
-STRUCTURE_TYPE_ID_TO_TIMER_TYPE = {
-    35825: "raitaru",
-    35826: "astrahus",
-    35827: "fortizar",
-    35832: "sotiyo",
-    35833: "keepstar",
-    35834: "azbel",
-    35835: "tatara",
-    35836: "athanor",
-    35840: "ansiblex_jump_gate",
-    35841: "orbital_skyhook",
-    35842: "metenox_moon_drill",
-    # Cyno beacons/jammers and others can be added as needed
-}
 
 
 class StructureResponse(BaseModel):
@@ -283,124 +267,6 @@ def parse_structure_notification(text: str):
         "solar_system_id": solar_system_id,
         "type_id": type_id,
     }
-
-
-REINFORCEMENT_NOTIFICATION_STATE = {
-    "StructureLostShields": "armor",
-    "StructureLostArmor": "hull",
-    "OrbitalReinforced": "armor",
-}
-
-
-def ensure_timer_from_reinforcement_notification(  # noqa: C901
-    notification_type: str,
-    data: dict,
-    corporation_name: str,
-    alliance_name: str | None,
-    system_name_resolver: Callable[[int], str],
-) -> EveStructureTimer | None:
-    """
-    Create or update EveStructureTimer when we have a reinforcement notification
-    with a known timer end. Returns the timer if created/updated, else None.
-    """
-    timer_end = data.get("timer_end")
-    if not timer_end:
-        return None
-    state = REINFORCEMENT_NOTIFICATION_STATE.get(notification_type)
-    if not state:
-        return None
-
-    structure_id = data.get("structure_id")
-    type_id = data.get("type_id")
-    solar_system_id = data.get("solar_system_id")
-
-    timer_type = None
-    structure = None
-    name = None
-    system_name = None
-
-    if structure_id is not None and structure_id > 0:
-        structure = EveStructure.objects.filter(id=structure_id).first()
-        if structure:
-            timer_type = STRUCTURE_TYPE_ID_TO_TIMER_TYPE.get(
-                structure.type_id
-            ) or STRUCTURE_TYPE_ID_TO_TIMER_TYPE.get(type_id)
-            name = structure.name
-            system_name = structure.system_name
-    if not timer_type and type_id is not None:
-        timer_type = STRUCTURE_TYPE_ID_TO_TIMER_TYPE.get(type_id)
-    if not timer_type:
-        return None
-
-    if not system_name and solar_system_id is not None:
-        system_name = system_name_resolver(solar_system_id)
-    if not system_name:
-        system_name = "Unknown"
-    if not name:
-        name = (
-            f"Structure {structure_id}"
-            if structure_id and structure_id > 0
-            else "Orbital"
-        )
-
-    now = datetime.now(timezone.utc)
-    existing = None
-    if structure:
-        existing = (
-            EveStructureTimer.objects.filter(
-                structure=structure, state=state, timer__gte=now
-            )
-            .order_by("timer")
-            .first()
-        )
-    if not existing and structure_id and structure_id < 0:
-        existing = (
-            EveStructureTimer.objects.filter(
-                structure__isnull=True,
-                state=state,
-                system_name=system_name,
-                name=name,
-                timer__gte=now,
-            )
-            .order_by("timer")
-            .first()
-        )
-
-    if existing:
-        existing.timer = timer_end
-        existing.name = name
-        existing.system_name = system_name
-        existing.corporation_name = corporation_name
-        existing.alliance_name = alliance_name
-        existing.updated_at = now
-        existing.save()
-        logger.info(
-            "Updated EveStructureTimer %s (%s) for %s at %s",
-            existing.id,
-            state,
-            name,
-            timer_end,
-        )
-        return existing
-
-    timer = EveStructureTimer.objects.create(
-        name=name,
-        state=state,
-        type=timer_type,
-        timer=timer_end,
-        system_name=system_name,
-        corporation_name=corporation_name,
-        alliance_name=alliance_name,
-        structure=structure,
-    )
-    logger.info(
-        "Created EveStructureTimer %s (%s) for %s at %s",
-        timer.id,
-        state,
-        name,
-        timer_end,
-    )
-    return timer
 
 
 def is_new_event(
