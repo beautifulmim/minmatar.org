@@ -92,5 +92,9 @@ def update_alliance_characters():
         user__in=users_with_alliance_chars
     ).exclude(token=None)
 
+    logger.info(
+        "Queuing update_character for %d alliance character(s)",
+        all_characters.count(),
+    )
     for character in all_characters:
         update_character.apply_async(args=[character.character_id])

@@ -1,16 +1,10 @@
-import re
 from datetime import timedelta
 
 from celery.schedules import crontab, schedule
 
 CELERYD_HIJACK_ROOT_LOGGER = False
+# Queue/routing are set in app/celery.py so they apply for workers and producers.
 
-# Route eveonline tasks to a dedicated queue so they don't block the default queue
-CELERY_TASK_ROUTES = (
-    [
-        (re.compile(r"^eveonline\."), {"queue": "eveonline"}),
-    ],
-)
 # Retain broker connection retries on worker startup (Celery 6+)
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
@@ -67,13 +61,14 @@ CELERYBEAT_MARKET = [
     ),
 ]
 
-# Characters
+# Characters (eveonline tasks use queue="eveonline" for admin "Run" and beat)
 CELERYBEAT_CHARACTERS = [
     (
         "[Characters] Update Affiliations",
         {
             "task": "eveonline.tasks.affiliations.update_character_affilliations",
             "schedule": crontab(minute="18,48", hour="*"),
+            "options": {"queue": "eveonline"},
         },
     ),
     (
@@ -81,6 +76,7 @@ CELERYBEAT_CHARACTERS = [
         {
             "task": "eveonline.tasks.characters.update_alliance_characters",
             "schedule": crontab(minute=37, hour="*/4"),
+            "options": {"queue": "eveonline"},
         },
     ),
     (
@@ -88,17 +84,19 @@ CELERYBEAT_CHARACTERS = [
         {
             "task": "eveonline.tasks.players.update_players",
             "schedule": schedule(timedelta(hours=8)),
+            "options": {"queue": "eveonline"},
         },
     ),
 ]
 
-# Corporations
+# Corporations (eveonline tasks use queue="eveonline" for admin "Run" and beat)
 CELERYBEAT_CORPORATIONS = [
     (
         "[Corporations] Import Corporations",
         {
             "task": "eveonline.tasks.corporations.sync_alliance_corporations",
             "schedule": crontab(minute=0, hour="*/2"),
+            "options": {"queue": "eveonline"},
         },
     ),
     (
@@ -106,6 +104,7 @@ CELERYBEAT_CORPORATIONS = [
         {
             "task": "eveonline.tasks.corporations.update_corporations",
             "schedule": crontab(minute=0, hour="*/1"),
+            "options": {"queue": "eveonline"},
         },
     ),
     (

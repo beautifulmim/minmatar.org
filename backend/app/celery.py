@@ -6,6 +6,7 @@ import sentry_sdk
 from celery import Celery, signals
 from celery.app import trace
 from django.conf import settings  # noqa
+from kombu import Queue
 
 # set the default Django settings module for the 'celery' program.
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "app.settings")
@@ -16,6 +17,18 @@ app = Celery("app")
 # Using a string here means the worker don't have to serialize
 # the configuration object to child processes.
 app.config_from_object("django.conf:settings")
+
+# Queue and routing: set here so workers and producers (beat, admin) use the same queues.
+app.conf.task_queues = (
+    Queue("celery", routing_key="celery"),
+    Queue("eveonline", routing_key="eveonline"),
+)
+app.conf.task_routes = {
+    "eveonline.*": {"queue": "eveonline"},
+}
+
+# Celery 6+: use this for startup retries; silences deprecation warning in 5.x
+app.conf.broker_connection_retry_on_startup = True
 
 # setup priorities ( 0 Highest, 9 Lowest )
 app.conf.broker_transport_options = {
