@@ -215,20 +215,28 @@ def notify_eve_market_contract_warnings():
 @app.task()
 def fetch_eve_market_contracts():
     start_time = timezone.now()
+    logger.info("fetch_eve_market_contracts starting")
 
     EveMarketContractError.objects.all().delete()
-
-    logger.info(
-        "Fetching and updating market contracts (public, character, corporation)"
-    )
+    logger.info("Cleared previous contract errors")
 
     market_locations = list(EveLocation.objects.filter(market_active=True))
     location_ids = [loc.location_id for loc in market_locations]
     locations_by_id = {loc.location_id: loc for loc in market_locations}
+    logger.info(
+        "Loaded %s market-active location(s): %s",
+        len(market_locations),
+        [loc.location_name for loc in market_locations],
+    )
 
     # 1. Fetch public contracts from ESI and store them
+    logger.info("Step 1: Fetching public contracts from ESI")
     for location in market_locations:
-        logger.info("Fetching contracts for %s", location.location_name)
+        logger.info(
+            "Fetching public contracts for %s (region_id=%s)",
+            location.location_name,
+            location.region_id,
+        )
         if not location.region_id:
             logger.info(
                 "Skipping contract update for location without region: %s",
@@ -237,15 +245,23 @@ def fetch_eve_market_contracts():
             continue
         esi_response = EsiClient(None).get_public_contracts(location.region_id)
         if not esi_response.success():
-            logger.info(
-                "Error %d fetching contracts for region: %d",
+            logger.warning(
+                "ESI error %s fetching public contracts for %s (region_id=%s)",
                 esi_response.response_code,
+                location.location_name,
                 location.region_id,
             )
-        for contract in esi_response.results():
+            continue
+        contracts = list(esi_response.results())
+        for contract in contracts:
             create_or_update_contract(contract, location)
+        logger.info(
+            "Processed %s public contract(s) for %s",
+            len(contracts),
+            location.location_name,
+        )
 
-    logger.info("Public contracts from ESI updated")
+    logger.info("Step 1 complete: public contracts from ESI updated")
 
     # Contract IDs already stored as finished (private) never change state; skip them
     finished_private_contract_ids = set(
@@ -253,45 +269,70 @@ def fetch_eve_market_contracts():
             status="finished", is_public=False
         ).values_list("id", flat=True)
     )
+    logger.info(
+        "Excluding %s finished private contract ID(s) from character/corp sync",
+        len(finished_private_contract_ids),
+    )
 
     # 2. Fetch character contracts from our database, store if they match parameters
-    if location_ids:
+    logger.info("Step 2: Fetching character contracts from database")
+    if not location_ids:
+        logger.info("No market locations, skipping character contracts")
+    else:
         char_contracts = EveCharacterContract.objects.filter(
             type=EveMarketContract.esi_contract_type,
             start_location_id__in=location_ids,
         ).exclude(contract_id__in=finished_private_contract_ids)
+        char_contracts_list = list(char_contracts)
+        logger.info(
+            "Found %s character contract(s) to process",
+            len(char_contracts_list),
+        )
         char_stored = 0
-        for db_contract in char_contracts:
+        for db_contract in char_contracts_list:
             location = locations_by_id.get(db_contract.start_location_id)
             if location and create_or_update_contract_from_db_contract(
                 db_contract, location
             ):
                 char_stored += 1
         logger.info(
-            "Stored %s character contract(s) into EveMarketContract",
+            "Step 2 complete: stored %s character contract(s) into EveMarketContract",
             char_stored,
         )
 
     # 3. Fetch corporation contracts from our database, store if they match parameters
-    if location_ids:
+    logger.info("Step 3: Fetching corporation contracts from database")
+    if not location_ids:
+        logger.info("No market locations, skipping corporation contracts")
+    else:
         corp_contracts = EveCorporationContract.objects.filter(
             type=EveMarketContract.esi_contract_type,
             start_location_id__in=location_ids,
         ).exclude(contract_id__in=finished_private_contract_ids)
+        corp_contracts_list = list(corp_contracts)
+        logger.info(
+            "Found %s corporation contract(s) to process",
+            len(corp_contracts_list),
+        )
         corp_stored = 0
-        for db_contract in corp_contracts:
+        for db_contract in corp_contracts_list:
             location = locations_by_id.get(db_contract.start_location_id)
             if location and create_or_update_contract_from_db_contract(
                 db_contract, location
             ):
                 corp_stored += 1
         logger.info(
-            "Stored %s corporation contract(s) into EveMarketContract",
+            "Step 3 complete: stored %s corporation contract(s) into EveMarketContract",
             corp_stored,
         )
 
+    logger.info("Updating completed contract statuses (since %s)", start_time)
     update_completed_contracts(start_time)
+    logger.info("Updating expired contract statuses (since %s)", start_time)
     update_expired_contracts(start_time)
+
+    duration = (timezone.now() - start_time).total_seconds()
+    logger.info("fetch_eve_market_contracts complete in %.1fs", duration)
 
 
 @app.task()
