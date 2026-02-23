@@ -4,6 +4,7 @@ from typing import List
 
 from django.conf import settings
 from esi.clients import EsiClientProvider
+from esi.errors import TokenInvalidError
 from esi.models import Token
 from oauthlib.oauth2.rfc6749.errors import InvalidGrantError
 from eveuniverse.models import (
@@ -112,7 +113,7 @@ class EsiClient:
 
         try:
             return token.valid_access_token(), SUCCESS
-        except InvalidGrantError:
+        except (InvalidGrantError, TokenInvalidError):
             # Import here to avoid circular import (eveonline.models loads client)
             from eveonline.models import (  # pylint: disable=import-outside-toplevel
                 EveCharacter,
