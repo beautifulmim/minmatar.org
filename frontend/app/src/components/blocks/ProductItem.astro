@@ -51,7 +51,7 @@ import IndustryIcon from '@components/icons/IndustryIcon.astro';
                 }
 
                 <small class:list={[ { 'text-red': product.strategy === 'imported' } ]}>
-                    {t(product.strategy as any)}
+                    {t(product.strategy as any) ?? product.strategy}
                 </small>
             </FlexInline>
         </ItemBadge>

@@ -55,7 +55,7 @@ import Tag from '@components/blocks/Tag.astro';
         {is_editing &&
             <Tag
                 id={`post-tag-${post.post_id}`}
-                text={t(post.state as any)}
+                text={t(post.state as any) ?? post.state}
                 color={post.state === 'published' ? 'green' : undefined}
             />
         }

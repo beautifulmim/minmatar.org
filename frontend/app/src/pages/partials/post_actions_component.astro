@@ -120,7 +120,7 @@ import Tag from '@components/blocks/Tag.astro';
         <Tag
             hx-swap-oob="true"
             id={`post-tag-${(post as PostListUI).post_id}`}
-            text={t((post as PostListUI).state as any)}
+            text={t((post as PostListUI).state as any) ?? (post as PostListUI).state}
             color={(post as PostListUI).state === 'published' ? 'green' : undefined}
         />
     }

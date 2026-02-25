@@ -137,7 +137,7 @@ const eve_time_text = eve_time.toLocaleDateString(lang, JSON.parse(import.meta.e
                                 {fleet.audience}
                             </TextGroup>
                             <TextGroup title={t('type')} class="[ sentence-cap ]">
-                                {t(fleet.type as any)}
+                                {t(fleet.type as any) ?? fleet.type}
                             </TextGroup>
                         </Flexblock>
                     </div>

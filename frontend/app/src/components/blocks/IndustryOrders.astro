@@ -62,7 +62,7 @@ import CollapsableButton from '@components/blocks/CollapsableButton.astro'
                                 order.children[0].source === 'reaction',
                                 32,
                             )}
-                            alt={t(order.children[0].source as any)}
+                            alt={t(order.children[0].source as any) ?? order.children[0].source}
                             size={16}
                             placeholder={get_bpc_icon(1075, false, 32)}
                         />

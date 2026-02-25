@@ -38,7 +38,7 @@ import IndustrialistIcon from '@components/icons/IndustrialistIcon.astro';
             character_name={contract.issuer_character_name}
             heading={true}
         >
-            <small>{t(`contract_${contract.status}` as any)}</small>
+            <small>{t(`contract_${contract.status}` as any) ?? contract.status}</small>
         </PilotBadge>
     </Flexblock>
     <FlexInline gap='var(--space-l)'>
