@@ -23,7 +23,6 @@ const MEDIA_ICON = {
 
 import { format_date } from '@helpers/date'
 
-import { Image } from 'astro:assets';
 import FlexInline from '@components/compositions/FlexInline.astro';
 
 import Badge from '@components/blocks/Badge.astro';
@@ -39,6 +38,7 @@ import CharacterPicture from '@components/blocks/CharacterPicture.astro';
         class="[ items-center! text-nowrap! ]"
         title={post.title}
         size={32}
+        gap='var(--space-xs)'
     >
         <picture slot="picture">
             {MEDIA_ICON[post.tags[0]] ?
