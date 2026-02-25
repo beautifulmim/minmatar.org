@@ -70,8 +70,8 @@ import FlexInline from '@components/compositions/FlexInline.astro';
         </Flexblock>
     </Wrapper>
     
-    <div class="[ corporation-identity ]">
-        <img class="[ absolute ]" src="/images/corporations/nebula.png"  />
+    <div class="[ corporation-identity ][ relative ]">
+        <img class="[ nebula ][ absolute w-full ]" src="/images/corporations/nebula.png"  />
         <picture class="[ justify-center ]">
             <img class="[ ceos ]" src="/images/corporations/associates/ceos.png" />
             <img class="[ athanor ]" src="/images/corporations/associates/athanor.png" />
@@ -210,6 +210,18 @@ import FlexInline from '@components/compositions/FlexInline.astro';
             left: 16%;
         }
     }
+
+    @keyframes blurred-fade-in {
+        0% {
+            filter: blur(40px);
+            opacity: 0
+        }
+
+        to {
+            filter: blur();
+            opacity: 1
+        }
+    }
 </style>
 
 <style lang="scss" is:global>
@@ -244,6 +256,11 @@ import FlexInline from '@components/compositions/FlexInline.astro';
             animation-iteration-count: 1;
             transform-origin: top right;
             animation-fill-mode: forwards;
+        }
+
+        .nebula {
+            animation: 1s ease-in-out both blurred-fade-in;
+            animation-delay: 2s;
         }
     }
 </style>
