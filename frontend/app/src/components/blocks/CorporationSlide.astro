@@ -63,7 +63,7 @@ import { query_string } from '@helpers/string';
         padding_block='var(--space-s)'
         padding_inline='var(--space-s)'
     >
-        <Flexblock gap='var(--space-xl)' class="[ content ][ pb-32 lg:pb-0 ]">
+        <Flexblock gap='var(--space-xl)' class="[ content ]">
             <VerticalCenter>
                 <FixedFluid width='64px' class="[ items-center w-full ]">
                     <picture>
@@ -87,8 +87,8 @@ import { query_string } from '@helpers/string';
         </Flexblock>
     </Wrapper>
     
-    <div class="[ corporation-identity ]">
-        <img class="[ absolute ]" src="/images/corporations/nebula.png"  />
+    <div class="[ corporation-identity ][ relative ]">
+        <img class="[ nebula ][ absolute w-full  ]" src="/images/corporations/nebula.png"  />
         <picture
             class:list={{ 'ceo-right': picture_placement === 'right' }}
         >
@@ -114,6 +114,7 @@ import { query_string } from '@helpers/string';
 </FixedFluid>
 
 <style lang="scss">
+
     .corporation-intro {
         position: relative;
     }
@@ -185,6 +186,18 @@ import { query_string } from '@helpers/string';
             opacity: 1;
         }
     }
+
+    @keyframes blurred-fade-in {
+        0% {
+            filter: blur(40px);
+            opacity: 0
+        }
+
+        to {
+            filter: blur();
+            opacity: 1
+        }
+    }
 </style>
 
 <style lang="scss" is:global>
@@ -203,6 +216,11 @@ import { query_string } from '@helpers/string';
             animation-iteration-count: 1;
             transform-origin: bottom;
             animation-fill-mode: forwards;
+        }
+
+        .nebula {
+            animation: 1s ease-in-out both blurred-fade-in;
+            animation-delay: 2s;
         }
     }
 </style>

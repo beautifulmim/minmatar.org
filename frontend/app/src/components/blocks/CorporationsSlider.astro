@@ -25,9 +25,6 @@ const CORPORATIONS_WITH_SLIDE = [
 let corporations_with_no_slide:CorporationObject[] = []
 let corp_filter:number[] = []
 
-import { get_corporation_logo } from '@helpers/eve_image_server';
-import { get_alliance_logo } from '@helpers/eve_image_server';
-
 const MINMATAR_FLEET_HOLDINGS_ID = 98735318
 const BLACK_RIFTER_COFFIN_COMPANY_ID  = 98726032
 const TEMPORARY_SOLUTIONS_UNLIMITED_ID = 98821223
@@ -38,7 +35,6 @@ const CORPORATIONS_FILTER = [
 ]
 corporations = corporations.filter( (i) => !CORPORATIONS_FILTER.includes(i.corporation_id) )
 
-const pagination_icons:string[] = []
 corporations.forEach( (corp, i) => {
     if (!CORPORATIONS_WITH_SLIDE.includes(corp.corporation_name)) {
         corporations_with_no_slide.push(corp)
@@ -53,17 +49,8 @@ CORPORATIONS_WITH_SLIDE.forEach(corp_name => {
     const corp = corporations.find(corporation => corporation.corporation_name === corp_name)
     if (corp !== undefined) {
         corporations_sorted.push(corp)
-        pagination_icons.push(get_corporation_logo(corp.corporation_id, 64))
     }
 })
-              
-const MINMATAR_FLEET_ID = 99011978
-const MINMATAR_FLEET_ASSOCIATES_ID = 99012009
-
-if (corporations_with_no_slide.length > 0)
-    pagination_icons.push(get_alliance_logo(MINMATAR_FLEET_ID, 64))
-
-pagination_icons.push(get_alliance_logo(MINMATAR_FLEET_ASSOCIATES_ID, 64))
 
 import { slugify } from '@helpers/string'
 
@@ -85,9 +72,7 @@ import FleetCorporationsSlide from '@components/blocks/FleetCorporationsSlide.as
     id="corporations-list"
 >
     {corporations_sorted.length > 0 &&
-        <CorporationsSwiper
-            pagination_icons={pagination_icons}
-        >
+        <CorporationsSwiper>
             {corporations_sorted.map((corporation, index) =>
                 <div class="swiper-slide" data-hash={slugify(corporation.corporation_name)}>
                     {corporation.corporation_name == 'Rattini Tribe' &&
@@ -153,3 +138,43 @@ import FleetCorporationsSlide from '@components/blocks/FleetCorporationsSlide.as
         </Wrapper>
     }
 </div>
+
+<div class="[ swiper-button-prev ]"></div>
+<div class="[ swiper-button-next ]"></div>
+
+<style lang="scss">
+    .swiper-button-prev,
+    .swiper-button-next {
+        --swiper-navigation-color: var(--highlight);
+        --swiper-navigation-sides-offset: calc(-1 * var(--space-m-l));
+
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        opacity: 0;
+    }
+
+    /*.swiper-button-prev {
+        left: calc(var(--swiper-navigation-sides-offset) + 48px);
+    }
+
+    .swiper-button-next {
+        right: var(--swiper-navigation-sides-offset);
+    }*/
+
+    .swiper-initialized ~ .swiper-button-prev,
+    .swiper-initialized ~ .swiper-button-next {
+        opacity: 1;
+    }
+
+    .swiper-initialized ~ .swiper-button-next.swiper-button-disabled,
+    .swiper-initialized ~ .swiper-button-prev.swiper-button-disabled {
+        opacity: 0;
+    }
+
+    .swiper-button-next.swiper-button-disabled,
+    .swiper-button-prev.swiper-button-disabled {
+        --swiper-navigation-color: var(--fleet-yellow);
+        opacity: 1;
+    }
+</style>
