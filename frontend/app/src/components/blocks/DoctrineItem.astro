@@ -40,7 +40,7 @@ const show_subtitles = ((show_primary_fittings ? 1 : 0) + (show_secondary_fittin
             <ItemPicture item_id={primary_ship.ship_id} item_name={primary_ship.ship_name} />
             <Flexblock gap='var(--space-3xs)'>
                 <h2>{doctrine.name} {t('doctrine')}</h2>
-                <small>{t(doctrine.type as any)}</small>
+                <small>{t(doctrine.type as any) ?? doctrine.type}</small>
             </Flexblock>
         </FlexInline>
         <Button href={translatePath(`/ships/doctrines/list/${doctrine.id}`)}>

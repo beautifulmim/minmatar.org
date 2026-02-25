@@ -25,7 +25,7 @@ import StylessButton from './StylessButton.astro';
             character_name={fleet.fleet_commander_name}
             heading={true}
         >
-            <small class="[ text-nowrap! ]">{t(`${fleet.type}_fleet` as any)}</small>
+            <small class="[ text-nowrap! ]">{t(`${fleet.type}_fleet` as any) ?? fleet.type}</small>
         </PilotBadge>
         <div class="[ fleet-status-text-wrapper ]">
             {fleet?.status === 'cancelled' &&

@@ -16,16 +16,16 @@ import Markdown from '@components/blocks/Markdown.astro';
 <Context>
     {title &&
         <FlexInline justification='space-between'>
-            <h4>{t(title as any)}</h4>
+            <h4>{t(title as any) ?? title}</h4>
 
             {tag &&
-                <Tag text={t(tag as any)} />
+                <Tag text={t(tag as any) ?? tag} />
             }
         </FlexInline>
     }
     {description &&
         <Markdown
-            markdown={t(description as any)}
+            markdown={t(description as any) ?? description}
             inline={true}
             inline_element='span'
         />

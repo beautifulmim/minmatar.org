@@ -39,7 +39,7 @@ import Select from '@components/blocks/Select.astro';
         >
             <option value="-1" selected={!prime_time ? 'selected' : undefined}>{t('select_timezone')}</option>
             {prime_times.map(timezone =>
-                <option value={timezone} selected={timezone === prime_time ? 'selected' : undefined}>{t(timezone as any)}</option>
+                <option value={timezone} selected={timezone === prime_time ? 'selected' : undefined}>{t(timezone as any) ?? timezone}</option>
             )}
         </Select>
     </FlexInline>

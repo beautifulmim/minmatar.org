@@ -75,7 +75,7 @@ import TutorialBadge from '@components/blocks/TutorialBadge.astro';
     
                     <Select x-model="esi_token">
                         {user_selectable_esi_tokens_roles.map(role =>
-                            <option value={role}>{t(role as any)}</option>
+                            <option value={role}>{t(role as any) ?? role}</option>
                         )}
                     </Select>
                 </Grid>

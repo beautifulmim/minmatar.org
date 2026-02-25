@@ -98,8 +98,8 @@ import Badge from '@components/blocks/Badge.astro';
                 x-on:change="is_dirty = true"
             >
                 <Flexblock gap='var(--space-3xs)'>
-                    <h3>{t(`${tag.description}_tag` as any)}</h3>
-                    <small>{t(`${tag.description}_tag_description` as any)}</small>
+                    <h3>{t(`${tag.description}_tag` as any) ?? tag.description}</h3>
+                    <small>{t(`${tag.description}_tag_description` as any) ?? tag.description}</small>
                 </Flexblock>
             </SelectableCard>    
         )}

@@ -40,8 +40,8 @@ const doctrines_select_options = [  no_doctrine_option  ].concat(
 
 let FLEET_TYPES_LABELS = {}
 const fleet_types_select_options = fleet_types.map( (i):SelectOptions => {
-    FLEET_TYPES_LABELS[i] = t(i as any)
-    return {value: i, label: t(i as any)}
+    FLEET_TYPES_LABELS[i] = t(i as any) ?? i
+    return {value: i, label: t(i as any) ?? i}
 } )
 
 // Locations are no longer used - staging location comes from audience
