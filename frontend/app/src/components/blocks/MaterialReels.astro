@@ -48,7 +48,12 @@ import ClipboardButton from '@components/blocks/ClipboardButton.astro';
                             class="[ swiper ][ w-full ]"
                             id="materials-list"
                         >
-                            <MarqueeSwiper swiper_selector='#materials-list' pagination={false} gap={20}>
+                            <MarqueeSwiper
+                                swiper_selector='#materials-list'
+                                pagination={false}
+                                gap={20}
+                                glitch_reduction={true}
+                            >
                                 <div class="[ swiper-slide ]" style="margin-right: 20px; width: 100px"></div>
                                 <div class="[ swiper-slide ]" style="margin-right: 20px; width: 100px"></div>
                                 <div class="[ swiper-slide ]" style="margin-right: 20px; width: 100px"></div>

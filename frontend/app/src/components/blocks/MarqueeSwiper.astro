@@ -6,6 +6,7 @@ interface Props {
     initial_slide?:     number;
     align?:             'start' | 'center' | 'end';
     speed?:             number,
+    glitch_reduction?:  boolean;
 }
 
 const {
@@ -15,6 +16,7 @@ const {
     initial_slide = 0,
     align = 'start',
     speed = 5000,
+    glitch_reduction = false,
 } = Astro.props
 
 import FlexInline from '@components/compositions/FlexInline.astro';
@@ -41,6 +43,10 @@ import FlexInline from '@components/compositions/FlexInline.astro';
                     initialSlide: ${initial_slide},
                     slidesPerView: "auto",
                     watchSlidesVisibility: true,
+                    ${glitch_reduction ?
+                    `centeredSlides: false,
+                    roundLengths: true,
+                    loopAdditionalSlides: 30,` : ''}
                     spaceBetween: ${gap},
                     pagination: false,
                     loop: true,
