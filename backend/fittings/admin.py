@@ -13,13 +13,14 @@ from .models import (
 
 @admin.register(EveFitting)
 class EveFittingAdmin(admin.ModelAdmin):
-    """Admin screen for EveFitting entity"""
+    """Admin screen for EveFitting entity. Name and ship_id are inferred from EFT."""
 
     list_display = ("name", "ship_id", "description")
     search_fields = ("name", "description", "aliases")
     list_filter = ("ship_id",)
     list_per_page = 50
     ordering = ("name",)
+    readonly_fields = ("name", "ship_id")
 
     def save_model(self, request, obj, form, change):
         eft_format = form.cleaned_data.get("eft_format") or getattr(
