@@ -346,16 +346,32 @@ def fetch_market_item_history_for_type(type_id: int) -> int:
         .distinct()
     )
     if not region_ids:
-        logger.debug("No regions for type_id=%s", type_id)
+        logger.info(
+            "fetch_market_item_history_for_type type_id=%s — no active regions found, skipping",
+            type_id,
+        )
         return 0
+
+    logger.info(
+        "fetch_market_item_history_for_type type_id=%s — starting across %s region(s): %s",
+        type_id,
+        len(region_ids),
+        region_ids,
+    )
 
     total_updated = 0
     for region_id in region_ids:
         updated, _ = update_region_market_history_for_type(region_id, type_id)
         total_updated += updated
+        logger.info(
+            "fetch_market_item_history_for_type type_id=%s region_id=%s — updated %s rows",
+            type_id,
+            region_id,
+            updated,
+        )
 
     logger.info(
-        "fetch_market_item_history_for_type type_id=%s regions=%s rows_updated=%s",
+        "fetch_market_item_history_for_type type_id=%s — completed: %s region(s), %s total rows updated",
         type_id,
         len(region_ids),
         total_updated,

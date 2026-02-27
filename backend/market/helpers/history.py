@@ -20,14 +20,24 @@ def update_region_market_history_for_type(
     Returns (rows_updated_or_created, days_in_response).
     """
     if not EveType.objects.filter(id=type_id).exists():
-        logger.debug("Skipping type_id=%s (no EveType)", type_id)
+        logger.info(
+            "update_region_market_history_for_type region_id=%s type_id=%s — skipped, EveType does not exist",
+            region_id,
+            type_id,
+        )
         return 0, 0
+
+    logger.info(
+        "update_region_market_history_for_type region_id=%s type_id=%s — fetching history from ESI",
+        region_id,
+        type_id,
+    )
 
     client = EsiClient(None)
     response = client.get_region_market_history(region_id, type_id)
     if not response.success():
         logger.warning(
-            "Failed to fetch region history region_id=%s type_id=%s: %s",
+            "update_region_market_history_for_type region_id=%s type_id=%s — ESI request failed (status %s)",
             region_id,
             type_id,
             response.response_code,
@@ -35,16 +45,28 @@ def update_region_market_history_for_type(
         return 0, 0
 
     entries = response.results() or []
+    logger.info(
+        "update_region_market_history_for_type region_id=%s type_id=%s — received %s entries from ESI",
+        region_id,
+        type_id,
+        len(entries),
+    )
+
     updated = 0
+    skipped = 0
     for entry in entries:
         date_str = entry.get("date")
         if not date_str:
+            skipped += 1
             continue
         try:
-            # ESI returns "YYYY-MM-DD"
             date = datetime.strptime(date_str, "%Y-%m-%d").date()
         except (ValueError, TypeError):
-            logger.warning("Invalid date in history: %r", date_str)
+            skipped += 1
+            logger.warning(
+                "update_region_market_history_for_type — invalid date: %r",
+                date_str,
+            )
             continue
 
         EveMarketItemHistory.objects.update_or_create(
@@ -60,5 +82,14 @@ def update_region_market_history_for_type(
             },
         )
         updated += 1
+
+    logger.info(
+        "update_region_market_history_for_type region_id=%s type_id=%s — completed: %s upserted, %s skipped out of %s entries",
+        region_id,
+        type_id,
+        updated,
+        skipped,
+        len(entries),
+    )
 
     return updated, len(entries)
