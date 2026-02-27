@@ -55,7 +55,20 @@ services:
         command: celery -A app worker -l info -Q eveonline
         deploy:
             mode: replicated
-            replicas: 4
+            replicas: 2
+        depends_on:
+            - app
+
+    celery-market:
+        build:
+            context: ./backend/.
+            dockerfile: Dockerfile
+        restart: always
+        env_file: .env
+        command: celery -A app worker -l info -Q market
+        deploy:
+            mode: replicated
+            replicas: 2
         depends_on:
             - app
 

@@ -23,6 +23,7 @@ app.config_from_object("django.conf:settings")
 app.conf.task_queues = (
     Queue("celery", routing_key="celery"),
     Queue("eveonline", routing_key="eveonline"),
+    Queue("market", routing_key="market"),
 )
 
 # Celery 6+: use this for startup retries; silences deprecation warning in 5.x

@@ -334,7 +334,7 @@ def fetch_eve_market_contracts():
     logger.info("fetch_eve_market_contracts complete in %.1fs", duration)
 
 
-@app.task()
+@app.task(rate_limit="1/s")
 def fetch_market_item_history_for_type(type_id: int) -> int:
     """
     Update EveMarketItemHistory for one type_id across all unique region_ids
@@ -396,7 +396,9 @@ def fetch_market_item_history():
         return
 
     for type_id in type_ids:
-        fetch_market_item_history_for_type.apply_async(args=[type_id])
+        fetch_market_item_history_for_type.apply_async(
+            args=[type_id], queue="market"
+        )
 
     logger.info(
         "fetch_market_item_history scheduled %s type_id task(s)",

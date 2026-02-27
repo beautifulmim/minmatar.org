@@ -36,6 +36,7 @@ CELERYBEAT_MARKET = [
         {
             "task": "market.tasks.fetch_market_item_history",
             "schedule": crontab(minute=15, hour=12),
+            "options": {"queue": "market"},
         },
     ),
     (
