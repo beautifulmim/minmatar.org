@@ -37,6 +37,7 @@ def update_character(eve_character_id):
         update_character.apply_async(
             args=[eve_character_id],
             countdown=countdown,
+            queue="eveonline",
         )
         logger.info(
             "Deferring character update for %s by %s s (ESI downtime 11:00–11:15 UTC)",
@@ -101,4 +102,6 @@ def update_alliance_characters():
         all_characters.count(),
     )
     for character in all_characters:
-        update_character.apply_async(args=[character.character_id])
+        update_character.apply_async(
+            args=[character.character_id], queue="eveonline"
+        )

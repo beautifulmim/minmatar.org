@@ -32,7 +32,9 @@ def update_corporations():
     for corporation in EveCorporation.objects.filter(
         alliance__name__in=ALLIED_ALLIANCE_NAMES
     ):
-        update_corporation.apply_async(args=[corporation.corporation_id])
+        update_corporation.apply_async(
+            args=[corporation.corporation_id], queue="eveonline"
+        )
 
 
 @app.task
