@@ -1690,6 +1690,8 @@ export const ui = {
         'copy_full_list': 'Copy full list',
         'sell_orders.copy_selected': 'Copy selected',
         'sell_orders.group_other': 'Other',
+        'sell_orders.baseline_sell': 'baseline sell',
+        'sell_orders.market_avg': 'market avg',
         'sell_orders.copy_options': 'Copy options',
         'sell_orders.select_groups': 'Select groups to include',
         'sell_orders.select_all_groups': 'Select all',

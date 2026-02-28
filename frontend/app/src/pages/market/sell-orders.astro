@@ -46,6 +46,8 @@ interface ItemDisplay {
     baseline_buy_price: number | null
     baseline_split_price: number | null
     markup_pct: number | null
+    effective_baseline: number | null
+    baseline_label: string
 }
 
 function to_display(item: SellOrderItem): ItemDisplay {
@@ -54,10 +56,16 @@ function to_display(item: SellOrderItem): ItemDisplay {
         : 100
     const threshold = (20 * item.expected_quantity) / 100
     const low_amount = item.expected_quantity > 0 && item.current_quantity <= threshold
-    const markup_pct = (item.current_lowest_price != null && item.baseline_price != null && item.baseline_price > 0)
-        ? ((item.current_lowest_price - item.baseline_price) / item.baseline_price) * 100
+    const effective_baseline = (item.baseline_sell_price != null && item.baseline_sell_price > 0)
+        ? item.baseline_sell_price
+        : item.baseline_price
+    const markup_pct = (item.current_lowest_price != null && effective_baseline != null && effective_baseline > 0)
+        ? ((item.current_lowest_price - effective_baseline) / effective_baseline) * 100
         : null
-    return { ...item, completion, low_amount, markup_pct }
+    const baseline_label = (item.baseline_sell_price != null && item.baseline_sell_price > 0)
+        ? t('sell_orders.baseline_sell')
+        : t('sell_orders.market_avg')
+    return { ...item, completion, low_amount, markup_pct, effective_baseline, baseline_label }
 }
 
 const items_with_expectations: ItemDisplay[] = (active_location?.items.filter(i => i.expected_quantity > 0) ?? []).map(to_display)
@@ -417,7 +425,7 @@ const REEL_GAP = 80
                                                     <div class="[ markup-cell ]">
                                                         {item.markup_pct != null ? (
                                                             <span class:list={['markup-badge', { positive: item.markup_pct > 0, negative: item.markup_pct < 0 }]}
-                                                                data-tippy-content={`${item.current_lowest_price?.toLocaleString('en-US', { maximumFractionDigits: 0 })} ISK vs ${item.baseline_price?.toLocaleString('en-US', { maximumFractionDigits: 0 })} ISK market avg`}
+                                                                data-tippy-content={`${item.current_lowest_price?.toLocaleString('en-US', { maximumFractionDigits: 0 })} ISK vs ${item.effective_baseline?.toLocaleString('en-US', { maximumFractionDigits: 0 })} ISK ${item.baseline_label}`}
                                                             >
                                                                 {item.markup_pct > 0 ? '+' : ''}{item.markup_pct.toFixed(0)}%
                                                             </span>
