@@ -2,7 +2,7 @@
 import { i18n } from '@helpers/i18n'
 const { t, translatePath } = i18n(Astro.url)
 
-import type { SellOrderLocation } from '@dtypes/api.minmatar.org'
+import type { SellOrderItem, SellOrderLocation } from '@dtypes/api.minmatar.org'
 import { get_sell_orders } from '@helpers/api.minmatar.org/market'
 import { prod_error_messages } from '@helpers/env'
 
@@ -48,7 +48,7 @@ interface ItemDisplay {
     markup_pct: number | null
 }
 
-function to_display(item: import('@dtypes/api.minmatar.org').SellOrderItem): ItemDisplay {
+function to_display(item: SellOrderItem): ItemDisplay {
     const completion = item.expected_quantity > 0
         ? Math.min(100, (item.current_quantity / item.expected_quantity) * 100)
         : 100
