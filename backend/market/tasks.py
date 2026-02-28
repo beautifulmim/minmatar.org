@@ -129,6 +129,10 @@ def fetch_market_location_prices_for_type(type_id: int) -> int:
     from ESI and update EveMarketItemLocationPrice for that item at that location.
     Returns total price rows updated.
     """
+    logger.info(
+        "fetch_market_location_prices_for_type type_id=%s — starting",
+        type_id,
+    )
     locations_list = list(EveLocation.objects.filter(market_active=True))
     if not locations_list:
         logger.info(
@@ -136,9 +140,24 @@ def fetch_market_location_prices_for_type(type_id: int) -> int:
             type_id,
         )
         return 0
+    logger.info(
+        "fetch_market_location_prices_for_type type_id=%s — loaded %s market-active location(s): %s",
+        type_id,
+        len(locations_list),
+        [
+            f"{loc.location_id}({loc.location_name}, structure={loc.is_structure})"
+            for loc in locations_list
+        ],
+    )
     has_structure = any(loc.is_structure for loc in locations_list)
     character_id = (
         get_character_with_structure_markets_scope() if has_structure else None
+    )
+    logger.info(
+        "fetch_market_location_prices_for_type type_id=%s — has_structure=%s character_id=%s",
+        type_id,
+        has_structure,
+        character_id,
     )
     if has_structure and not character_id:
         logger.warning(
@@ -146,12 +165,26 @@ def fetch_market_location_prices_for_type(type_id: int) -> int:
             type_id,
         )
     total = 0
-    for location in locations_list:
+    for idx, location in enumerate(locations_list):
+        logger.info(
+            "fetch_market_location_prices_for_type type_id=%s — processing location %s/%s location_id=%s %s",
+            type_id,
+            idx + 1,
+            len(locations_list),
+            location.location_id,
+            location.location_name,
+        )
         try:
             n = fetch_and_update_market_location_prices(
                 character_id, location.location_id, type_id=type_id
             )
             total += n
+            logger.info(
+                "fetch_market_location_prices_for_type type_id=%s location_id=%s — updated %s price row(s)",
+                type_id,
+                location.location_id,
+                n,
+            )
         except Exception as e:
             logger.exception(
                 "fetch_market_location_prices_for_type type_id=%s location_id=%s — %s",

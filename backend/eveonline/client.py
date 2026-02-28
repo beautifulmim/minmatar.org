@@ -590,14 +590,29 @@ class EsiClient:
         large structures to avoid loading all orders into memory. Yields None
         once if token is invalid.
         """
+        logger.info(
+            "get_structure_market_orders_pages: structure_id=%s character_id=%s — checking token",
+            structure_id,
+            self.character_id,
+        )
         token, status = self._valid_token(["esi-markets.structure_markets.v1"])
         if status > 0:
+            logger.warning(
+                "get_structure_market_orders_pages: structure_id=%s — invalid token (status=%s), yielding None",
+                structure_id,
+                status,
+            )
             yield None
             return
 
         page = 1
         page_size = 1000
         while True:
+            logger.info(
+                "get_structure_market_orders_pages: structure_id=%s — requesting page %s",
+                structure_id,
+                page,
+            )
             operation = (
                 esi_provider.client.Market.get_markets_structures_structure_id(
                     structure_id=structure_id,
@@ -606,6 +621,12 @@ class EsiClient:
                 )
             )
             page_data = operation.results()
+            logger.info(
+                "get_structure_market_orders_pages: structure_id=%s — page %s received, orders_count=%s",
+                structure_id,
+                page,
+                len(page_data) if page_data else 0,
+            )
             if not page_data:
                 break
             yield page_data
@@ -922,12 +943,22 @@ def get_region_market_orders_pages(region_id: int, type_id: int | None = None):
     range, etc. Use this for NPC station locations; filter by location_id.
     If type_id is set, only orders for that type are returned (fewer pages).
     """
+    logger.info(
+        "get_region_market_orders_pages: region_id=%s type_id=%s — starting",
+        region_id,
+        type_id,
+    )
     page = 1
     page_size = 1000
     params: dict = {"page": page}
     if type_id is not None:
         params["type_id"] = type_id
     while True:
+        logger.info(
+            "get_region_market_orders_pages: region_id=%s — requesting page %s",
+            region_id,
+            page,
+        )
         url = f"{ESI_BASE_URL}/markets/{region_id}/orders/"
         try:
             resp = requests.get(url, params=params, timeout=30)
@@ -941,9 +972,21 @@ def get_region_market_orders_pages(region_id: int, type_id: int | None = None):
             yield None
             return
         if resp.status_code >= 400:
+            logger.warning(
+                "get_region_market_orders_pages: region_id=%s page=%s — status %s",
+                region_id,
+                page,
+                resp.status_code,
+            )
             yield None
             return
         page_data = resp.json() if resp.content else []
+        logger.info(
+            "get_region_market_orders_pages: region_id=%s — page %s received, orders_count=%s",
+            region_id,
+            page,
+            len(page_data),
+        )
         if not page_data:
             break
         yield page_data

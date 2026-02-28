@@ -85,13 +85,37 @@ def _fetch_orders_into_aggregates(
                 location.location_id,
             )
             return None
+        logger.info(
+            "Fetching structure market orders: location_id=%s character_id=%s filter_type_id=%s",
+            location.location_id,
+            character_id,
+            filter_type_id,
+        )
+        page_num = 0
         for page_data in EsiClient(
             character_id
         ).get_structure_market_orders_pages(location.location_id):
             if page_data is None:
+                logger.warning(
+                    "Structure market orders returned None (token invalid?) for location_id=%s",
+                    location.location_id,
+                )
                 return None
+            page_num += 1
+            logger.info(
+                "Structure market orders page %s: location_id=%s orders_count=%s",
+                page_num,
+                location.location_id,
+                len(page_data),
+            )
             s, b = _aggregate_orders_into_prices(page_data, location_id=None)
             _merge_aggregates(sell_min, buy_max, s, b)
+        logger.info(
+            "Finished structure market orders: location_id=%s total_pages=%s types_seen=%s",
+            location.location_id,
+            page_num,
+            len(sell_min),
+        )
     else:
         if location.region_id is None:
             logger.warning(
@@ -100,15 +124,40 @@ def _fetch_orders_into_aggregates(
                 location.location_name,
             )
             return None
+        logger.info(
+            "Fetching region market orders: location_id=%s region_id=%s filter_type_id=%s",
+            location.location_id,
+            location.region_id,
+            filter_type_id,
+        )
+        page_num = 0
         for page_data in get_region_market_orders_pages(
             location.region_id, type_id=filter_type_id
         ):
             if page_data is None:
+                logger.warning(
+                    "Region market orders returned None for region_id=%s",
+                    location.region_id,
+                )
                 return None
+            page_num += 1
+            logger.info(
+                "Region market orders page %s: region_id=%s location_id=%s orders_count=%s",
+                page_num,
+                location.region_id,
+                location.location_id,
+                len(page_data),
+            )
             s, b = _aggregate_orders_into_prices(
                 page_data, location_id=location.location_id
             )
             _merge_aggregates(sell_min, buy_max, s, b)
+        logger.info(
+            "Finished region market orders: location_id=%s total_pages=%s types_seen=%s",
+            location.location_id,
+            page_num,
+            len(sell_min),
+        )
     return sell_min, buy_max
 
 
@@ -120,6 +169,12 @@ def _persist_location_prices(
     filter_type_id: int | None,
 ) -> int:
     """Delete stale rows, create/update EveMarketItemLocationPrice. Returns count of rows written."""
+    logger.info(
+        "Persisting location prices: location_id=%s type_count=%s filter_type_id=%s",
+        location_id,
+        len(type_ids),
+        filter_type_id,
+    )
     if not type_ids:
         if filter_type_id is not None:
             EveMarketItemLocationPrice.objects.filter(
@@ -207,18 +262,39 @@ def fetch_and_update_market_location_prices(
     Returns the number of EveMarketItemLocationPrice rows created or
     updated. Returns 0 if location not found or fetch fails.
     """
+    logger.info(
+        "fetch_and_update_market_location_prices: location_id=%s type_id=%s character_id=%s",
+        location_id,
+        type_id,
+        character_id,
+    )
     location = EveLocation.objects.filter(location_id=location_id).first()
     if not location:
         logger.warning(
             "Location %s not found for location price update", location_id
         )
         return 0
+    logger.info(
+        "fetch_and_update_market_location_prices: location_id=%s is_structure=%s region_id=%s — fetching orders",
+        location_id,
+        location.is_structure,
+        location.region_id,
+    )
 
     aggregates = _fetch_orders_into_aggregates(location, character_id, type_id)
     if aggregates is None:
+        logger.info(
+            "fetch_and_update_market_location_prices: location_id=%s — fetch returned None, skipping persist",
+            location_id,
+        )
         return 0
     sell_min, buy_max = aggregates
     type_ids = list(sell_min.keys())
+    logger.info(
+        "fetch_and_update_market_location_prices: location_id=%s — got %s type(s), persisting",
+        location_id,
+        len(type_ids),
+    )
     return _persist_location_prices(
         location_id, type_ids, sell_min, buy_max, type_id
     )
