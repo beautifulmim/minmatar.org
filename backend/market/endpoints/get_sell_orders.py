@@ -1,11 +1,12 @@
 from ninja import Router
 from pydantic import BaseModel
 
-from django.db.models import Min, Sum
+from django.db.models import Min, OuterRef, Subquery, Sum
 
 from eveonline.models import EveLocation
 from eveuniverse.models import EveType
 from market.models.contract import EveMarketContractExpectation
+from market.models.history import EveMarketItemHistory
 from market.models.item import (
     EveMarketFittingExpectation,
     EveMarketItemExpectation,
@@ -17,15 +18,23 @@ router = Router(tags=["Market"])
 
 
 def _get_baseline_prices() -> dict[str, float]:
-    """Lowest sell-order price per item at the price_baseline location."""
+    """Latest market history average price per item in the price_baseline location's region."""
     baseline = EveLocation.objects.filter(price_baseline=True).first()
-    if not baseline:
+    if not baseline or not baseline.region_id:
         return {}
+    latest_date = (
+        EveMarketItemHistory.objects.filter(
+            region_id=baseline.region_id,
+            item_id=OuterRef("item_id"),
+        )
+        .order_by("-date")
+        .values("date")[:1]
+    )
     return dict(
-        EveMarketItemOrder.objects.filter(location=baseline)
-        .values("item__name")
-        .annotate(lowest=Min("price"))
-        .values_list("item__name", "lowest")
+        EveMarketItemHistory.objects.filter(
+            region_id=baseline.region_id,
+            date=Subquery(latest_date),
+        ).values_list("item__name", "average")
     )
 
 
