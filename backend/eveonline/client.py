@@ -585,13 +585,13 @@ class EsiClient:
 
     def get_structure_market_orders_pages(self, structure_id: int):
         """
-        Yields one page of market orders at a time (requires character with
-        esi-markets.structure_markets.v1 and docking access). Use this for
-        large structures to avoid loading all orders into memory. Yields None
-        once if token is invalid.
+        Yields all market orders for the structure in one chunk (requires
+        character with esi-markets.structure_markets.v1 and docking access).
+        Uses django-esi's results(), which fetches all pages internally.
+        Yields None once if token is invalid.
         """
         logger.info(
-            "get_structure_market_orders_pages: structure_id=%s character_id=%s — checking token",
+            "get_structure_market_orders_pages: structure_id=%s character_id=%s — fetching all pages via results()",
             structure_id,
             self.character_id,
         )
@@ -605,34 +605,21 @@ class EsiClient:
             yield None
             return
 
-        page = 1
-        page_size = 1000
-        while True:
-            logger.info(
-                "get_structure_market_orders_pages: structure_id=%s — requesting page %s",
-                structure_id,
-                page,
+        operation = (
+            esi_provider.client.Market.get_markets_structures_structure_id(
+                structure_id=structure_id,
+                token=token,
             )
-            operation = (
-                esi_provider.client.Market.get_markets_structures_structure_id(
-                    structure_id=structure_id,
-                    page=page,
-                    token=token,
-                )
-            )
-            page_data = operation.results()
-            logger.info(
-                "get_structure_market_orders_pages: structure_id=%s — page %s received, orders_count=%s",
-                structure_id,
-                page,
-                len(page_data) if page_data else 0,
-            )
-            if not page_data:
-                break
-            yield page_data
-            if len(page_data) < page_size:
-                break
-            page += 1
+        )
+        all_orders = operation.results()
+        count = len(all_orders) if all_orders else 0
+        logger.info(
+            "get_structure_market_orders_pages: structure_id=%s — received all pages, orders_count=%s",
+            structure_id,
+            count,
+        )
+        if all_orders:
+            yield all_orders
 
     def get_active_fleet(self) -> EsiResponse:
         token, status = self._valid_token(["esi-fleets.read_fleet.v1"])
