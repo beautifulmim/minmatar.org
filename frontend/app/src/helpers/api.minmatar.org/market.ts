@@ -236,28 +236,8 @@ export interface LocationExpectations {
     expectations: LocationFittingExpectation[]
 }
 
-export interface SellOrderItem {
-    item_name: string
-    type_id: number | null
-    category_id: number | null
-    category_name: string
-    group_id: number | null
-    group_name: string
-    expected_quantity: number
-    current_quantity: number
-    fulfilled: boolean
-    issuer_ids: number[]
-    lowest_price: number | null
-    baseline_price: number | null
-}
-
-export interface SellOrderLocation {
-    location_id: number
-    location_name: string
-    short_name: string
-    is_price_baseline: boolean
-    items: SellOrderItem[]
-}
+import type { SellOrderItem, SellOrderLocation } from '@dtypes/api.minmatar.org'
+export type { SellOrderItem, SellOrderLocation }
 
 export async function get_sell_orders(location_id?: number) {
     const headers = {

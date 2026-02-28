@@ -2,7 +2,7 @@
 import { i18n } from '@helpers/i18n'
 const { t, translatePath } = i18n(Astro.url)
 
-import type { SellOrderLocation } from '@helpers/api.minmatar.org/market'
+import type { SellOrderLocation } from '@dtypes/api.minmatar.org'
 import { get_sell_orders } from '@helpers/api.minmatar.org/market'
 import { prod_error_messages } from '@helpers/env'
 
@@ -40,19 +40,22 @@ interface ItemDisplay {
     issuer_ids: number[]
     completion: number
     low_amount: boolean
-    lowest_price: number | null
+    current_lowest_price: number | null
     baseline_price: number | null
+    baseline_sell_price: number | null
+    baseline_buy_price: number | null
+    baseline_split_price: number | null
     markup_pct: number | null
 }
 
-function to_display(item: { item_name: string, type_id: number | null, category_id: number | null, category_name: string, group_id: number | null, group_name: string, expected_quantity: number, current_quantity: number, fulfilled: boolean, issuer_ids: number[], lowest_price: number | null, baseline_price: number | null }): ItemDisplay {
+function to_display(item: import('@dtypes/api.minmatar.org').SellOrderItem): ItemDisplay {
     const completion = item.expected_quantity > 0
         ? Math.min(100, (item.current_quantity / item.expected_quantity) * 100)
         : 100
     const threshold = (20 * item.expected_quantity) / 100
     const low_amount = item.expected_quantity > 0 && item.current_quantity <= threshold
-    const markup_pct = (item.lowest_price != null && item.baseline_price != null && item.baseline_price > 0)
-        ? ((item.lowest_price - item.baseline_price) / item.baseline_price) * 100
+    const markup_pct = (item.current_lowest_price != null && item.baseline_price != null && item.baseline_price > 0)
+        ? ((item.current_lowest_price - item.baseline_price) / item.baseline_price) * 100
         : null
     return { ...item, completion, low_amount, markup_pct }
 }
@@ -414,7 +417,7 @@ const REEL_GAP = 80
                                                     <div class="[ markup-cell ]">
                                                         {item.markup_pct != null ? (
                                                             <span class:list={['markup-badge', { positive: item.markup_pct > 0, negative: item.markup_pct < 0 }]}
-                                                                data-tippy-content={`${item.lowest_price?.toLocaleString('en-US', { maximumFractionDigits: 0 })} ISK vs ${item.baseline_price?.toLocaleString('en-US', { maximumFractionDigits: 0 })} ISK market avg`}
+                                                                data-tippy-content={`${item.current_lowest_price?.toLocaleString('en-US', { maximumFractionDigits: 0 })} ISK vs ${item.baseline_price?.toLocaleString('en-US', { maximumFractionDigits: 0 })} ISK market avg`}
                                                             >
                                                                 {item.markup_pct > 0 ? '+' : ''}{item.markup_pct.toFixed(0)}%
                                                             </span>
