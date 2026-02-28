@@ -25,7 +25,10 @@ from market.models import (
     EveTypeWithSellOrders,
 )
 from market.models.item import _get_consumable_items, parse_eft_items
-from market.tasks import fetch_market_item_history_for_type
+from market.tasks import (
+    fetch_market_item_history_for_type,
+    fetch_market_location_prices_for_type,
+)
 
 MARKET_INDEX_MODELS = {
     "evemarketcontractexpectation": "Market contracts",
@@ -382,6 +385,11 @@ class EveTypeWithSellOrdersAdmin(admin.ModelAdmin):
                 self.admin_site.admin_view(self.fetch_history_view),
                 name="market_evetypewithsellorders_fetch_history",
             ),
+            path(
+                "<path:object_id>/fetch-prices/",
+                self.admin_site.admin_view(self.fetch_prices_view),
+                name="market_evetypewithsellorders_fetch_prices",
+            ),
         ] + urls
 
     def fetch_history_view(self, request, object_id):
@@ -400,6 +408,22 @@ class EveTypeWithSellOrdersAdmin(admin.ModelAdmin):
         )
         return HttpResponseRedirect("../")
 
+    def fetch_prices_view(self, request, object_id):
+        if not self.has_change_permission(request):
+            messages.error(request, "Permission denied.")
+            return HttpResponseRedirect("../")
+        obj = self.get_object(request, object_id)
+        if not obj:
+            messages.error(request, "Item not found.")
+            return HttpResponseRedirect("../")
+        fetch_market_location_prices_for_type.delay(obj.pk)
+        messages.success(
+            request,
+            f"Location prices fetch queued for {obj.name} (type_id={obj.pk}). "
+            "It will run across all market-active locations.",
+        )
+        return HttpResponseRedirect("../")
+
     def change_view(self, request, object_id, form_url="", extra_context=None):
         extra_context = extra_context or {}
         obj = self.get_object(request, object_id)
@@ -408,7 +432,13 @@ class EveTypeWithSellOrdersAdmin(admin.ModelAdmin):
             extra_context["market_item_trends"] = get_market_item_trends(
                 obj.pk
             )
+            extra_context["location_prices_for_item"] = list(
+                EveMarketItemLocationPrice.objects.filter(item_id=obj.pk)
+                .select_related("location")
+                .order_by("location__location_name")
+            )
             extra_context["fetch_history_url"] = "../fetch-history/"
+            extra_context["fetch_prices_url"] = "../fetch-prices/"
             expectations = list(
                 EveMarketItemExpectation.objects.filter(item_id=obj.pk)
                 .select_related("location")
@@ -587,6 +617,11 @@ class EveMarketItemOrderAdmin(admin.ModelAdmin):
                 self.admin_site.admin_view(self.fetch_history_view),
                 name="market_evemarketitemorder_fetch_history",
             ),
+            path(
+                "<path:object_id>/fetch-prices/",
+                self.admin_site.admin_view(self.fetch_prices_view),
+                name="market_evemarketitemorder_fetch_prices",
+            ),
         ] + urls
 
     def fetch_history_view(self, request, object_id):
@@ -608,6 +643,25 @@ class EveMarketItemOrderAdmin(admin.ModelAdmin):
         )
         return HttpResponseRedirect("../")
 
+    def fetch_prices_view(self, request, object_id):
+        if not self.has_change_permission(request):
+            messages.error(request, "Permission denied.")
+            return HttpResponseRedirect("../")
+        obj = self.get_object(request, object_id)
+        if not obj:
+            messages.error(request, "Order not found.")
+            return HttpResponseRedirect("../")
+        if not obj.item_id:
+            messages.error(request, "Order has no item.")
+            return HttpResponseRedirect("../")
+        fetch_market_location_prices_for_type.delay(obj.item_id)
+        messages.success(
+            request,
+            f"Location prices fetch queued for item {obj.item} (type_id={obj.item_id}). "
+            "It will run across all market-active locations.",
+        )
+        return HttpResponseRedirect("../")
+
     def change_view(self, request, object_id, form_url="", extra_context=None):
         extra_context = extra_context or {}
         obj = self.get_object(request, object_id)
@@ -616,7 +670,13 @@ class EveMarketItemOrderAdmin(admin.ModelAdmin):
                 obj.item_id
             )
             extra_context["market_item_name"] = str(obj.item)
+            extra_context["location_prices_for_item"] = list(
+                EveMarketItemLocationPrice.objects.filter(item_id=obj.item_id)
+                .select_related("location")
+                .order_by("location__location_name")
+            )
             extra_context["fetch_history_url"] = "../fetch-history/"
+            extra_context["fetch_prices_url"] = "../fetch-prices/"
         return super().change_view(request, object_id, form_url, extra_context)
 
 

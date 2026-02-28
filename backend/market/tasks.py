@@ -123,6 +123,52 @@ def fetch_market_location_prices():
 
 
 @app.task()
+def fetch_market_location_prices_for_type(type_id: int) -> int:
+    """
+    For each market-active location, fetch market orders for the given type_id
+    from ESI and update EveMarketItemLocationPrice for that item at that location.
+    Returns total price rows updated.
+    """
+    locations_list = list(EveLocation.objects.filter(market_active=True))
+    if not locations_list:
+        logger.info(
+            "fetch_market_location_prices_for_type type_id=%s — no market-active locations, skipping",
+            type_id,
+        )
+        return 0
+    has_structure = any(loc.is_structure for loc in locations_list)
+    character_id = (
+        get_character_with_structure_markets_scope() if has_structure else None
+    )
+    if has_structure and not character_id:
+        logger.warning(
+            "fetch_market_location_prices_for_type type_id=%s — no character with structure scope; structure locations will be skipped",
+            type_id,
+        )
+    total = 0
+    for location in locations_list:
+        try:
+            n = fetch_and_update_market_location_prices(
+                character_id, location.location_id, type_id=type_id
+            )
+            total += n
+        except Exception as e:
+            logger.exception(
+                "fetch_market_location_prices_for_type type_id=%s location_id=%s — %s",
+                type_id,
+                location.location_id,
+                e,
+            )
+    logger.info(
+        "fetch_market_location_prices_for_type type_id=%s — %s location(s), %s price row(s)",
+        type_id,
+        len(locations_list),
+        total,
+    )
+    return total
+
+
+@app.task()
 def spawn_structure_sell_orders_pages(
     _clear_result,  # pylint: disable=invalid-name
     character_id: int,

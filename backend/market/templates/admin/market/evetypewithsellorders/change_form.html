@@ -2,10 +2,48 @@
 {% load i18n %}
 
 {% block content %}
-  {% if fetch_history_url %}
+  {% if fetch_history_url or fetch_prices_url %}
   <div class="module" style="margin-bottom: 15px;">
+    {% if fetch_history_url %}
     <a href="{{ fetch_history_url }}" class="button">{% trans "Fetch market history for this item" %}</a>
     <span class="help" style="margin-left: 8px;">{% trans "Queues a task to update EveMarketItemHistory for this type across all regions." %}</span>
+    <br style="margin-bottom: 8px;">
+    {% endif %}
+    {% if fetch_prices_url %}
+    <a href="{{ fetch_prices_url }}" class="button">{% trans "Fetch prices for this item" %}</a>
+    <span class="help" style="margin-left: 8px;">{% trans "Queues a task to update EveMarketItemLocationPrice for this type at all market-active locations." %}</span>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if location_prices_for_item %}
+  <div class="module" style="margin-bottom: 20px;">
+    <h2>{% trans "Location prices" %} – {{ market_item_name }}</h2>
+    <p class="help">{% trans "Sell / buy / split from EveMarketItemLocationPrice (per market-active location)." %}</p>
+    <div style="overflow-x: auto;">
+      <table class="table" style="min-width: 500px;">
+        <thead>
+          <tr>
+            <th>{% trans "Location" %}</th>
+            <th>{% trans "Sell" %}</th>
+            <th>{% trans "Buy" %}</th>
+            <th>{% trans "Split" %}</th>
+            <th>{% trans "Updated" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in location_prices_for_item %}
+          <tr>
+            <td>{{ row.location.location_name }}</td>
+            <td>{{ row.sell_price|floatformat:2 }}</td>
+            <td>{% if row.buy_price is not None %}{{ row.buy_price|floatformat:2 }}{% else %}–{% endif %}</td>
+            <td>{% if row.split_price is not None %}{{ row.split_price|floatformat:2 }}{% else %}–{% endif %}</td>
+            <td>{{ row.updated_at|date:"Y-m-d H:i" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
   {% endif %}
 
