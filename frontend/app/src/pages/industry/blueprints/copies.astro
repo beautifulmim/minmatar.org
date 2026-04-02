@@ -153,9 +153,9 @@ const page_title = t('industry.blueprint.copies.page_title');
                         style="display: none"
                     />
 
-                    <span x-show="showing_results && blueprints_count > item_listing_limit">{t('narrow_down_blueprint_copies')}</span>
+                    <span x-show="showing_results && blueprints_count > item_listing_limit" style="display: none;">{t('narrow_down_blueprint_copies')}</span>
                     
-                    <span x-show="showing_results && blueprints_count === 0">{t('no_blueprint_copies_to_display')}</span>
+                    <span x-show="showing_results && blueprints_count === 0" style="display: none;">{t('no_blueprint_copies_to_display')}</span>
                 </FlexInline>
 
                 <FlexInline>
